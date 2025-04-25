@@ -6,9 +6,8 @@ import fileinput
 import glob
 import os.path
 import time
-from itertools import groupby
 import string
-from pprint import pprint
+from itertools import groupby
 
 
 #
@@ -19,10 +18,17 @@ from pprint import pprint
 # original se llama text0.txt, el archivo generado se llamará text0_1.txt,
 # text0_2.txt, etc.
 #
+
+
 def copy_raw_files_to_input_folder(n):
     """Funcion copy_files"""
-    input_directory = "files/input"
-    clean_and_recreate_directory(input_directory)
+
+
+    if os.path.exists("files/input"):
+        for file in glob.glob("files/input/*"):
+            os.remove(file)
+        os.rmdir("files/input")
+    os.makedirs("files/input")
 
     for file in glob.glob("files/raw/*"):
         for i in range(1, n + 1):
@@ -33,6 +39,9 @@ def copy_raw_files_to_input_folder(n):
                     encoding="utf-8",
                 ) as f2:
                     f2.write(f.read())
+
+
+
 #
 # Escriba la función load_input que recive como parámetro un folder y retorna
 # una lista de tuplas donde el primer elemento de cada tupla es el nombre del
@@ -57,6 +66,7 @@ def load_input(input_directory):
         for line in f:
             sequence.append((fileinput.filename(), line))
     return sequence
+
 #
 # Escriba la función line_preprocessing que recibe una lista de tuplas de la
 # función anterior y retorna una lista de tuplas (clave, valor). Esta función
@@ -65,10 +75,11 @@ def load_input(input_directory):
 def line_preprocessing(sequence):
     """Line Preprocessing"""
     sequence = [
-        (key, value.translate(str.maketrans("", "", string.punctuation)))
+        (key, value.translate(str.maketrans("", "", string.punctuation)).lower())
         for key, value in sequence
     ]
     return sequence
+
 
 #
 # Escriba una función llamada maper que recibe una lista de tuplas de la
@@ -84,11 +95,8 @@ def line_preprocessing(sequence):
 #
 def mapper(sequence):
     """Mapper"""
-    return [
-        (word, 1)
-        for _, value in sequence
-        for word in value.split()
-    ]
+    return [(word, 1) for _, value in sequence for word in value.split()]
+
 
 #
 # Escriba la función shuffle_and_sort que recibe la lista de tuplas entregada
@@ -104,6 +112,8 @@ def mapper(sequence):
 def shuffle_and_sort(sequence):
     """Shuffle and Sort"""
     return sorted(sequence, key=lambda x: x[0])
+
+
 #
 # Escriba la función reducer, la cual recibe el resultado de shuffle_and_sort y
 # reduce los valores asociados a cada clave sumandolos. Como resultado, por
@@ -117,6 +127,7 @@ def reducer(sequence):
         result.append((key, sum(value for _, value in group)))
     return result
 
+
 #
 # Escriba la función create_ouptput_directory que recibe un nombre de
 # directorio y lo crea. Si el directorio existe, lo borra
@@ -124,7 +135,12 @@ def reducer(sequence):
 def create_ouptput_directory(output_directory):
     """Create Output Directory"""
 
-    clean_and_recreate_directory(output_directory)
+    if os.path.exists(output_directory):
+        for file in glob.glob(f"{output_directory}/*"):
+            os.remove(file)
+        os.rmdir(output_directory)
+    os.makedirs(output_directory)
+
 
 #
 # Escriba la función save_output, la cual almacena en un archivo de texto
@@ -140,35 +156,17 @@ def save_output(output_directory, sequence):
         for key, value in sequence:
             f.write(f"{key}\t{value}\n")
 
+
 #
 # La siguiente función crea un archivo llamado _SUCCESS en el directorio
 # entregado como parámetro.
 #
-def mapper(sequence):
-    """Mapper"""
-    return [(word, 1) for _, value in sequence for word in value.split()]
-
 def create_marker(output_directory):
     """Create Marker"""
+    with open(f"{output_directory}/_SUCCESS", "w", encoding="utf-8") as f:
+        f.write("")
 
 
-def clean_and_recreate_directory(directory_path):
-    """
-    Cleans and recreates a specific directory.
-    
-    Args:
-        directory_path (str): Path to the directory that will be cleaned and recreated.
-    """
-    # Check if the directory exists
-    if os.path.exists(directory_path):
-        # Remove all files inside the directory
-        for file in glob.glob(f"{directory_path}/*"):
-            os.remove(file)
-        # Remove the directory
-        os.rmdir(directory_path)
-    
-    # Create the directory
-    os.makedirs(directory_path)
 #
 # Escriba la función job, la cual orquesta las funciones anteriores.
 #
@@ -183,6 +181,7 @@ def run_job(input_directory, output_directory):
     save_output(output_directory, sequence)
     create_marker(output_directory)
 
+
 if __name__ == "__main__":
 
     copy_raw_files_to_input_folder(n=1000)
@@ -195,4 +194,4 @@ if __name__ == "__main__":
     )
 
     end_time = time.time()
-    print(f"Tiempo de ejecución: {end_time - start_time:.2f} segundos")
+    print(f"Tiempo de ejecución: {end_time - start_time:.2f} segundos")
